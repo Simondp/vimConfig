@@ -1,0 +1,178 @@
+"Force python 3
+if has('python3')
+endif
+noremap <SPACE> <nop>
+let mapleader = " "
+"Sane indent defaults
+set tabstop=4
+set softtabstop=0
+set shiftwidth=0 
+set expandtab
+set smartindent 
+"don't be try to be compatible
+set nocompatible
+set bg=dark
+
+"syntax highlighting
+
+"show line numbers
+
+"use relative number
+set noswapfile
+"fuzzy filesearch in subfolders
+set path+=**
+set wildmenu 
+"Set true colors not that 8 bit stuff
+" Enable true color 24
+if exists('+termguicolors')
+	let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+	let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+	set termguicolors
+endif
+
+"Enable omnicompletion
+filetype plugin on
+set omnifunc=syntaxcomplete#Complete
+
+"wrap text at end of window
+set wrap
+"set F5 to make program
+nnoremap <F5> :make!<cr>
+inoremap <F5> :make!<cr>
+nnoremap <leader>oi :e ~/.config/nvim/init.vim<cr>
+"set tags path to look up parent dir
+set tags+=./tags;/
+"Set auto indent 
+set autoindent
+filetype plugin indent on
+au BufRead,BufNewFile *html set filetype=html
+au BufRead,BufNewFile *.css set filetype=css
+call plug#begin('~/.config/nvim/plugged')
+Plug '~/Projects/nvim-plugins/VisualBufferPicker'
+Plug '~/plugins/simple-sql-client'
+Plug 'https://github.com/neovim/nvim-lspconfig'
+" Declare the list of plugins.
+Plug 'https://github.com/scrooloose/nerdtree.git'
+Plug 'nvim-treesitter/nvim-treesitter',{'do': 'TSUpdate'}
+" If you don't have nodejs and yarn
+" use pre build
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
+" List ends here. Plugins become visible to Vim after this call.
+Plug 'https://github.com/morhetz/gruvbox'
+Plug 'scrooloose/syntastic'
+Plug 'nvim-lua/completion-nvim'
+call plug#end()
+
+
+nmap <F2> :NERDTreeToggle<CR>
+"Markdown to HTML
+nmap <F3> :%!/usr/local/bin/Markdown.pl --html4tags <crl>
+nmap <F12> :setlocal spell! spelllang=en_us<CR>
+
+"colorscheme 
+colorscheme gruvbox
+lua << EOF
+local lspconfig = require 'lspconfig'
+local util = require 'lspconfig.util'
+local configs = require 'lspconfig/configs'
+local pid = vim.fn.getpid()
+local omnisharp_bin = "/home/sdp/.config/nvim/LSP/omnisharp-linux-x64/run"
+lspconfig.omnisharp.setup{
+    root_dir = lspconfig.util.root_pattern('.git');
+    cmd = { omnisharp_bin, "--languageserver" , "--hostPID", tostring(pid) };
+    on_attach=require'completion'.on_attach
+}
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+lspconfig.html.setup{
+    capabilities = capabilities,
+    filetypes={"html","cshtml","js"},
+    on_attach=require'completion'.on_attach
+}
+if not lspconfig.css then
+    configs.css ={
+        default_config = {
+            cmd = {"css-languageserver","--stdio"};
+            filetypes={"css","less","sass"};
+            root_dir = function(fname)
+                return lspconfig.util.find_git_ancestor(fname) or vim.loop.os_homedir()
+            end;
+            settings={};
+        };
+    }
+end
+--lspconfig.css.setup{
+  --  capabilities = capabilities,
+    --on_attach=require'completion'.on_attach
+--}
+local language_id_mapping = {
+  bib = 'bibtex',
+  plaintex = 'tex',
+  rnoweb = 'sweave',
+  rst = 'restructuredtext',
+  tex = 'latex',
+  xhtml = 'xhtml',
+}
+if not lspconfig.ltex then
+configs.ltex
+{
+    default_config = {
+    cmd = { bin_name },
+    filetypes = { 'bib', 'gitcommit', 'markdown', 'org', 'plaintex', 'rst', 'rnoweb', 'tex' },
+    root_dir = util.find_git_ancestor,
+    single_file_support = true,
+    get_language_id = function(_, filetype)
+      local language_id = language_id_mapping[filetype]
+      if language_id then
+        return language_id
+      else
+        return filetype
+      end
+    end;
+  };
+}
+end
+lspconfig.ltex.setup{};
+--Treesitter config
+--require 'nvim-treesitter.configs'.setup{
+  --  highlight = {
+    --    enable = true
+    --}
+--}
+--lspconfig.tsserver.setup{
+
+  --  on_attach=require'completion'.on_attach
+--}
+EOF
+
+"nvim-completion
+set completeopt=menuone,noinsert,noselect
+let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy', 'all']
+"LSP Bindings
+nnoremap <silent> <silent> <leader>d <cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <silent> <leader>D <cmd>lua vim.lsp.buf.declaration()<CR>
+nnoremap <silent> <leader>r <cmd>lua vim.lsp.buf.references()<CR>
+nnoremap <silent> <leader>i <cmd>lua vim.lsp.buf.implementation()<CR>
+nnoremap <silent> <leader>h <cmd>lua vim.lsp.buf.hover()<CR>
+nnoremap <silent> <leader>s <cmd>lua vim.lsp.buf.signature_help()<CR>
+nnoremap <silent> <leader>f <cmd>lua vim.lsp.buf.format()<CR>
+nnoremap <silent> <leader>R <cmd>lua vim.lsp.buf.rename()<CR>
+nnoremap <silent> <leader>a <cmd>lua vim.lsp.buf.code_action()<CR>
+"Syntastic settings
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
+let g:syntastic_cs_checkers = ['code_checker']
+
+"Remaped commands
+map <leader>f gg=G<C-o><C-o>
+nnoremap <leader>w :w<cr>
+nnoremap <leader>q :q!<cr>
+nnoremap <leader><tab> :bnext<cr>
+nnoremap <leader>s :so %<cr>
+nnoremap <silent><leader>cs :UltiSnipsEdit<cr>
