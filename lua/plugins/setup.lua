@@ -10,6 +10,7 @@ require('packer').startup(function(use)
   use {'hrsh7th/nvim-cmp', requires={"hrsh7th/cmp-nvim-lsp","hrsh7th/cmp-nvim-lua","L3MON4D3/LuaSnip"}}
   use 'morhetz/gruvbox'
   use 'neovim/nvim-lspconfig'
-  use {'nvim-telescope/telescope.nvim',tag = '0.1.0', requires={'nvim-lua/plenary.nvim','nvim-telescope/telescope-fzf-native.nvim','nvim-treesitter/nvim-treesitter'}}
+  use {'nvim-telescope/telescope.nvim',tag = '0.1.0', requires={'nvim-lua/plenary.nvim','nvim-telescope/telescope-fzf-native.nvim'}}
+  use {"nvim-treesitter/nvim-treesitter",run=':TSUpdate'}
   end
     )
